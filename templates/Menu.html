@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block pageheading %}
+
+{% endblock %}
+
+{% block body %}
+
+    <div class = "products">
+        {% for product in products %}
+            <div class="product-box" xmlns="http://www.w3.org/1999/html">
+
+                <h3> {{ product[0] }} </h3>
+                <p> {{ product[1] }} </p>
+                <p>Volume: <strong> {{ product[2] }} </strong> </p>
+                <p>Price: <strong> ${{ product[3] }} </strong> </p>
+                <img src="static/images/{{ product[4] }}{{ product[5]}}">
+
+            </div>
+        {% endfor %}
+    </div>
+
+
+
+
+
+{% endblock %}
