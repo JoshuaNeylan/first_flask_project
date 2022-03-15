@@ -20,7 +20,16 @@
                 <a href="/">Home</a>
                 <a href="/menu">Menu</a>
                 <a href="/contact">Contact</a>
-                <a href={{ logged_in[0] }}>{{ logged_in[1] }}</a>
+                {% if logged_in %}
+
+                    <a href="/logout">Log out</a>
+
+                {% else %}
+
+                    <a href="/login">Login</a>
+
+
+                {% endif %}
 
             </div>
 
@@ -32,6 +41,11 @@
 
 <div class="container">
     <body>
+
+        {% if logged_in %}
+            <strong> Hello, {{ session.first_name }} </strong>
+
+        {% endif %}
 
 
     {% block body %} {% endblock %}

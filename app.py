@@ -53,6 +53,10 @@ def render_contact():
 
 @app.route('/login', methods=["POST", "GET"])
 def render_login():
+
+    if is_logged_in():
+       return redirect("/")
+
     if request.method == "POST":
         email = request.form["email"].strip().lower()
         password = request.form["password"].strip().lower()
@@ -95,6 +99,9 @@ def render_login():
 
 @app.route('/signup', methods=["POST", "GET"])
 def render_signup():
+
+    if is_logged_in():
+        return redirect("/")
 
     if request.method == "POST":
         print(request.form)
@@ -141,10 +148,10 @@ def render_signup():
 
 def is_logged_in():
     if session.get("email") is None:
-        return ["/login", "Log in"]
+        return False
 
-    else:
-        return ["/logout", "Log out"]
+
+    return True
 
 
 @app.route("/logout")
