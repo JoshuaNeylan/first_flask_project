@@ -1,10 +1,19 @@
 import sqlite3
+from sqlite3 import Error
 
 from flask import Flask, render_template, request, redirect, session
+
+
+from flask_bcrypt import Bcrypt
+
+
+
 
 DB_NAME = "smile.db"
 
 app = Flask(__name__)
+
+bcrypt = Bcrypt(app)
 app.secret_key = "sdjfi3939j93@()@jJIDJijS)09"
 
 def create_connection(db_file):
@@ -59,34 +68,33 @@ def render_login():
 
     if request.method == "POST":
         email = request.form["email"].strip().lower()
-        password = request.form["password"].strip().lower()
+        password = request.form["password"].strip()
         con = create_connection(DB_NAME)
 
-        query = """SELECT id, first_name FROM user WHERE email = ? AND password  = ?"""
+        query = """SELECT id, first_name, password FROM user WHERE email = ?"""
 
         cur = con.cursor()
 
-        cur.execute(query, (email, password))
+        cur.execute(query, (email,))
         user_data = cur.fetchall()
         con.close()
 
-        if user_data:
-
+        try:
             user_id = user_data[0][0]
             first_name = user_data[0][1]
+            db_password = user_data[0][2]
 
+        except IndexError:
+            return redirect("/login?error=Email+or+password+is+incorrect")
 
-            session["email"] = email
-            session["user_id"] = user_id
-            session["first_name"] = first_name
-
-
-
-            return redirect("/menu")
-
-        else:
+        if not bcrypt.check_password_hash(db_password, password):
 
             return redirect("/login?error=Email+or+password+is+incorrect")
+
+        session["email"] = email
+        session["user_id"] = user_id
+        session["first_name"] = first_name
+        return redirect("/menu")
 
     error = request.args.get("error")
     if error == None:
@@ -108,8 +116,8 @@ def render_signup():
         fname = request.form.get("fname").title().strip()
         lname = request.form.get("lname").title().strip()
         email = request.form.get("email").title().lower()
-        password = request.form.get("password")
-        password2 = request.form.get("password2")
+        password = request.form.get("password").strip()
+        password2 = request.form.get("password2").strip()
 
         if password != password2:
             print(password, password2)
@@ -118,7 +126,7 @@ def render_signup():
         if len(password) < 8:
             return redirect("/signup?error=Password+must+be+8+characters+or+more")
 
-
+        hashed_password = bcrypt.generate_password_hash(password)
 
 
         con = create_connection(DB_NAME)
@@ -129,7 +137,7 @@ def render_signup():
 
         try:
 
-            cur.execute(query, (fname, lname, email, password))
+            cur.execute(query, (fname, lname, email, hashed_password))
 
         except sqlite3.IntegrityError:
             return redirect("/signup?error=Email+is+already+used")
