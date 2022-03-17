@@ -1,6 +1,5 @@
 import sqlite3
 from sqlite3 import Error
-
 from flask import Flask, render_template, request, redirect, session
 
 
@@ -69,6 +68,7 @@ def render_login():
     if request.method == "POST":
         email = request.form["email"].strip().lower()
         password = request.form["password"].strip()
+        session["log in details"] = [email, password]
         con = create_connection(DB_NAME)
 
         query = """SELECT id, first_name, password FROM user WHERE email = ?"""
@@ -94,15 +94,19 @@ def render_login():
         session["email"] = email
         session["user_id"] = user_id
         session["first_name"] = first_name
+        session.pop("log in details")
         return redirect("/menu")
+    log_in_details = session.get("log in details")
+    if log_in_details is None:
+        log_in_details = ["", ""]
+
 
     error = request.args.get("error")
-    if error == None:
+
+    if error is None:
         error = ""
 
-    return render_template("login.html", error=error, logged_in = is_logged_in())
-
-
+    return render_template("login.html", error=error, logged_in = is_logged_in(), details = log_in_details)
 
 
 @app.route('/signup', methods=["POST", "GET"])
@@ -112,22 +116,39 @@ def render_signup():
         return redirect("/")
 
     if request.method == "POST":
-        print(request.form)
+
         fname = request.form.get("fname").title().strip()
         lname = request.form.get("lname").title().strip()
         email = request.form.get("email").title().lower()
         password = request.form.get("password").strip()
         password2 = request.form.get("password2").strip()
 
+        session["sign up details"] = [fname, lname, email, password, password2]
+
+        incorrect_characters_string = """<>{}[]\/,|"""
+
+        if len(fname) < 2:
+            return redirect("/signup?error=First+name+needs+at+least+2+characters+or+more")
+
+        if len(lname) < 2:
+            return redirect("/signup?error=Last+name+needs+at+least+2+characters+or+more")
+
+        for char in incorrect_characters_string:
+
+            if char in fname or char in lname:
+
+                return redirect("/signup?error=Invalid+characters+in+first+or+last+name")
+
+        if len(email) < 6:
+            return redirect("/signup?error=Email+must+be+at+least+6+characters+or+more")
+
         if password != password2:
-            print(password, password2)
             return redirect("/signup?error=Passwords+dont+match")
 
         if len(password) < 8:
             return redirect("/signup?error=Password+must+be+8+characters+or+more")
 
         hashed_password = bcrypt.generate_password_hash(password)
-
 
         con = create_connection(DB_NAME)
 
@@ -140,18 +161,28 @@ def render_signup():
             cur.execute(query, (fname, lname, email, hashed_password))
 
         except sqlite3.IntegrityError:
-            return redirect("/signup?error=Email+is+already+used")
-
+            return redirect("/signup?error=Email+is+already+used?details={}")
 
         con.commit()
+
         con.close()
-        return redirect("\login")
+
+        [session.pop(key) for key in list(session.keys())]
+        print(session)
+        return redirect("login")
+    signup_details = session.get("sign up details")
+
+
+    if signup_details is None:
+        signup_details = ["", "", "", "", ""]
 
     error = request.args.get("error")
-    if error == None:
+
+    if error is None:
         error = ""
 
-    return render_template("signup.html", error = error, logged_in = is_logged_in())
+
+    return render_template("signup.html", error = error, logged_in = is_logged_in(), details = signup_details)
 
 
 def is_logged_in():
@@ -172,4 +203,5 @@ def logout():
 app.run(host="0,0,0,0", debug="True")
 # to fix database issue open database right click on smile go into properties and change url from joshua to 18163
 # the opposite is done from home
+
 
