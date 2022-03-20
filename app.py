@@ -4,7 +4,7 @@ from flask import Flask, render_template, request, redirect, session
 
 
 from flask_bcrypt import Bcrypt
-
+from datetime import datetime
 
 
 
@@ -40,7 +40,7 @@ def render_menu():
 
     con = create_connection(DB_NAME)
 
-    query = "SELECT name, description, volume, price, image, image_type FROM product"
+    query = "SELECT name, description, volume, price, image, image_type, id FROM product"
 
     cur = con.cursor()
     cur.execute(query)
@@ -198,6 +198,23 @@ def logout():
     [session.pop(key) for key in list(session.keys())]
 
     return redirect("/?message=See+you+next+time!")
+
+
+@app.route("/addtocart/<product_id>")
+def render_add_to_cart(product_id):
+    print("Added product id {} to the cart".format(product_id))
+    customerid = session["user_id"]
+    timestamp = datetime.now()
+
+
+    query = "INSERT INTO cart (customerid, productid, timestamp) VALUES (?, ?, ?)"
+
+    con = create_connection(DB_NAME)
+    cur = con.cursor()
+    cur.execute(query, (customerid, product_id, timestamp))
+    con.commit()
+    con.close()
+    return redirect(request.referrer)
 
 
 app.run(host="0,0,0,0", debug="True")

@@ -16,6 +16,13 @@
                 <p>Price: <strong> ${{ product[3] }} </strong> </p>
                 <img src="static/images/{{ product[4] }}{{ product[5]}}">
 
+                {% if logged_in %}
+
+                    <p align="center"> <br> <a href="/addtocart/{{ product[6] }}">Add to cart &raquo;</a> </br> </p>
+
+                {% endif %}
+
+
             </div>
         {% endfor %}
     </div>
