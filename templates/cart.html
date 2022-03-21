@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block pageheading %}
+
+{% endblock %}
+
+{% block body %}
+
+    <div class="message">
+
+        <h1> Cart </h1>
+
+
+    </div>
+
+    <table class = "cart-table">
+        <thead>
+
+            <tr>
+
+                <td> Name </td>
+                <td> Quantity </td>
+                <td> Price </td>
+                <td> Item Total </td>
+                <td> Remove One </td>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for item in cart_data %}
+            <tr>
+
+                <td> {{ item[2] }} </td>
+                <td> {{ item[1] }} </td>
+                <td> ${{ "{:.2f}".format(item[3])}} </td>
+                <td> ${{ "{:.2f}".format(item[3] * item[1]) }} </td>
+                <td> <a href = "/removeonefromcart/{{ item[0] }}"> X </a> </td>
+
+            </tr>
+            {% endfor %}
+            <tr>
+
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class = "cart-total"> ${{ total }} </td>
+                <td></td>
+
+            </tr>
+        </tbody>
+
+
+    </table>
+    <button><a href = "/confirmorder"> Confirm Order </a> </button>
+{% endblock %}
