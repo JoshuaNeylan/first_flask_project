@@ -223,6 +223,28 @@ def render_add_to_cart(product_id):
     return redirect("/menu")
 
 
+def cart_products_sorter(product_ids, cur):
+
+    for i in range(len(product_ids)):
+        product_ids[i] = product_ids[i][0]
+
+    unique_product_ids = list(set(product_ids))
+
+    for i in range(len(unique_product_ids)):
+        product_count = product_ids.count(unique_product_ids[i])
+        unique_product_ids[i] = [unique_product_ids[i], product_count]
+
+    query = "SELECT name, price FROM product WHERE id = ?;"
+
+    for item in unique_product_ids:
+        cur.execute(query, (item[0],))
+        item_details = cur.fetchall()
+        print(item_details)
+        item.append(item_details[0][0])
+        item.append(item_details[0][1])
+
+    return unique_product_ids
+
 @app.route("/cart")
 def render_cart():
     if not is_logged_in():
@@ -235,29 +257,15 @@ def render_cart():
     cur.execute(query, (customerid,))
     product_ids = cur.fetchall()
 
-    for i in range(len(product_ids)):
-        product_ids[i] = product_ids[i][0]
-
-    unique_product_ids = list(set(product_ids))
-
-    for i in range(len(unique_product_ids)):
-        product_count = product_ids.count(unique_product_ids[i])
-        unique_product_ids[i] = [unique_product_ids[i], product_count]
-
-    query = "SELECT name, price FROM product WHERE id = ?;"
-    for item in unique_product_ids:
-        cur.execute(query, (item[0],))
-        item_details = cur.fetchall()
-        print(item_details)
-        item.append(item_details[0][0])
-        item.append(item_details[0][1])
-
     total = 0
+    unique_product_ids = cart_products_sorter(product_ids, cur)
 
     for product in unique_product_ids:
 
         subtotal = product[3] * product[1]
         total += subtotal
+
+    total = "{:.2f}".format(total)
 
     con.close()
 
@@ -272,14 +280,17 @@ def remove_one_from_cart(productid):
         return redirect("/")
 
     print(f"Removed {productid} from cart")
-    query = "DELETE FROM cart WHERE productid = ?;"
+    customerid = session["user_id"]
+    query = "DELETE FROM cart WHERE id = (SELECT MIN(id) FROM cart WHERE productid = ? and customerid = ?);"
     con = create_connection(DB_NAME)
     cur = con.cursor()
-    cur.execute(query, (productid,))
+    cur.execute(query, (productid, customerid,))
     con.commit()
     con.close()
 
     return redirect("/cart")
+
+
 
 
 @app.route("/confirmorder")
@@ -300,21 +311,7 @@ def confirm_order():
     if len(product_ids) == 0:
         return redirect("/menu?error=Cart+empty")
 
-    for i in range(len(product_ids)):
-        product_ids[i] = product_ids[i][0]
-
-    unique_product_ids = list(set(product_ids))
-
-    for i in range(len(unique_product_ids)):
-        product_count = product_ids.count(unique_product_ids[i])
-        unique_product_ids[i] = [unique_product_ids[i], product_count]
-
-    query = "SELECT name, price FROM product WHERE id = ?;"
-    for item in unique_product_ids:
-        cur.execute(query, (item[0],))
-        item_details = cur.fetchall()
-        item.append(item_details[0][0])
-        item.append(item_details[0][1])
+    unique_product_ids = cart_products_sorter(product_ids, cur)
 
     query = "DELETE FROM cart WHERE id = ?"
 
@@ -335,7 +332,7 @@ def send_confirmation(order_info):
     # Use test email or another email
     sender_email = "joshwctest@gmail.com"
     sender_password = ".ajVsg/E3Ycx?gM"
-    table = "<table>\n<tr><th>Name</th><th>Quantity</th><th>Price</th><th>Order Total</th></tr>\n"
+    table = "<table>\n<tr><th>Name</th><th>Quantity </th><th>Price</th><th>Order Total</th></tr>\n"
     total = 0
     for product in order_info:
         name = product[2]
@@ -343,9 +340,9 @@ def send_confirmation(order_info):
         price = product[3]
         subtotal = product[3] * product[1]
         total += subtotal
-        table += "<tr><td>{}</td><td>{}</td><td>{:.2f}</td><td>{:.2f}</td></tr>\n".format(name, quantity, price,
+        table += "<tr><td>{}</td><td>{}</td><td>${:.2f}</td><td>${:.2f}</td></tr>\n".format(name, quantity, price,
                                                                                           subtotal)
-    table += "<tr><td></td><td></td><td>Total:</td><td>{:.2f}</td></tr>\n</table>".format(total)
+    table += "<tr><td></td><td></td><td>Total:</td><td>${:.2f}</td></tr>\n</table>".format(total)
     print(table)
     print(total)
     html_text = """<p>Hello {}.</p>
@@ -375,4 +372,4 @@ app.run(host="0,0,0,0", debug="True")
 # to fix database issue open database right click on smile go into properties and change url from joshua to 18163
 # the opposite is done from home
 
-# continue on slide 54
+
