@@ -67,7 +67,7 @@ def render_login():
         session["log in details"] = [email, password]
         con = create_connection(DB_NAME)
 
-        query = """SELECT id, first_name, password FROM user WHERE email = ?"""
+        query = """SELECT id, first_name, password FROM Users WHERE email = ?"""
 
         cur = con.cursor()
 
@@ -144,7 +144,7 @@ def render_signup():
 
         con = create_connection(DB_NAME)
 
-        query = "INSERT INTO user(id, first_name, last_name, email, password) VALUES(Null, ?, ?, ?, ?)"
+        query = "INSERT INTO Users(id, first_name, last_name, email, password) VALUES(Null, ?, ?, ?, ?)"
 
         cur = con.cursor()
 
